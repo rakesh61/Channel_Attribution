@@ -1,4 +1,4 @@
 Take the input as .csv file with data.
 We need to process/Filter the .csv file i.e replace empty cells with Null/None.
-The overall categories of channels are as below:
+
 
