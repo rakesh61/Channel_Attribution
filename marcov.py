@@ -25,9 +25,11 @@ def calculate_rank(vector):
   a={}
   rank=0
   for num in sorted(vector):
+    # print(num)
     if num not in a:
       a[num]=rank
       rank=rank+1
+  print([a[i] for i in vector])
   return[a[i] for i in vector]
 
 
@@ -36,34 +38,50 @@ def transition_matrix_func(import_data):
     z_import_data=import_data.copy()
      
     z_import_data['path1']='start>'+z_import_data['path']
+    # print(z_import_data, '---8')
     z_import_data['path2']=z_import_data['path1']+'>convert'
+    # print(z_import_data, '--- 9')
     
     
     z_import_data['pair']=z_import_data['path2'].apply(split_fun)
-    
+    # print(z_import_data, '--- 10')
+
     zlist=z_import_data['pair'].tolist()
+    # print(zlist, '---- 11')
+
     zlist=list(chain.from_iterable(zlist))
+    # print(zlist, '----12')
+
     zlist=list(map(str.strip, zlist))
+    print(zlist, '---- 13')
     T=calculate_rank(zlist)
     
     M = [[0]*len(unique(zlist)) for _ in range(len(unique(zlist)))]
-    
-    for (i,j) in zip(T,T[1:]):
+    print(M, '----14')
+    print(list(zip(T,T[1:])), '-----15')
+    for (i,j) in zip(T, T[1:]):
+        # print(i, '--', j, '---16')
         M[i][j] += 1
-    
+    print(M, '----17')
+
     x_df=pd.DataFrame(M)
         
     np.fill_diagonal(x_df.values,0)
+    print(np, '----18')
     
     x_df=pd.DataFrame(x_df.values/x_df.values.sum(axis=1)[:,None])
+    print(x_df, '---19')
     x_df.columns=sorted(unique(zlist))
+    print(x_df, '---20')
     x_df['index']=sorted(unique(zlist))
+    print(x_df, '---21')
     x_df.set_index("index", inplace = True) 
     x_df.loc['convert',:]=0
+    print(x_df, '----22')
     return(x_df)
 
 
-def simulation(trans,n):
+def simulation(trans, n):
    
     sim = ['']*n
     sim[0] = 'start'
@@ -80,22 +98,32 @@ def simulation(trans,n):
 def markov_chain(data_set, no_iteration=10, no_of_simulation=10000, alpha=5):
 
     import_dataset_v1 = data_set.copy()
+
     import_dataset_v1 = (import_dataset_v1.reindex(import_dataset_v1.index.repeat(import_dataset_v1.conversions))).reset_index()
-    # print(import_dataset_v1)
+    # print(import_dataset_v1, '----2')
+
     import_dataset_v1['conversions'] = 1
+    # print(import_dataset_v1['conversions'], '---3')
 
     import_dataset_v1 = import_dataset_v1[['path','conversions']]
-    
+    # print(import_dataset_v1 , '----4')
+
     import_dataset = (import_dataset_v1.groupby(['path']).sum()).reset_index()
+    # print(import_dataset, '----5')
+
     import_dataset['probability'] = import_dataset['conversions']/import_dataset['conversions'].sum()
+    # print(import_dataset["probability"], '----6')
     
     final = pd.DataFrame()
 
     for k in range(0, no_iteration):
         start = time.time()
-        import_data=pd.DataFrame({'path':np.random.choice(import_dataset['path'],size=import_dataset['conversions'].sum(),p=import_dataset['probability'],replace=True)})
+        import_data=pd.DataFrame({'path': np.random.choice(import_dataset['path'],
+                                                          size=import_dataset['conversions'].sum(),
+                                                          p=import_dataset['probability'],
+                                                          replace=True)})
         import_data['conversions']=1                           
-    
+        # print(import_data, '----7')
         tr_matrix=transition_matrix_func(import_data)
         channel_only = list(filter(lambda k0: k0 not in ['start','convert'], tr_matrix.columns)) 
     
@@ -135,8 +163,6 @@ def markov_chain(data_set, no_iteration=10, no_of_simulation=10000, alpha=5):
     H0: u=0
     H1: u>0
     '''
-
-
     unique_channel=unique(final['path'])
     #final=(pd.DataFrame(final.groupby(['path'])[['ass_conversion']].mean())).reset_index()
     final_df=pd.DataFrame()
@@ -169,3 +195,4 @@ def markov_chain(data_set, no_iteration=10, no_of_simulation=10000, alpha=5):
 import_dataset = pd.read_csv('channel attribution example - sheet1.csv')
 print(import_dataset)
 data, dataset = markov_chain(import_dataset, no_iteration=10, no_of_simulation=10000, alpha=5)
+
